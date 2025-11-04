@@ -1,10 +1,23 @@
-
 import 'dart:convert';
+import 'dart:io'; //
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'exercise_model.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+  }
+}
 
 void main() {
+  HttpOverrides.global = MyHttpOverrides();
+
   runApp(const MyApp());
 }
 
@@ -90,10 +103,26 @@ class _WorkoutListScreenState extends State<WorkoutListScreen> {
                     margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                     child: ListTile(
                       leading: CircleAvatar(
-                        backgroundImage: NetworkImage(exercise.imageUrl),
+                        radius: 30,
                         backgroundColor: Colors.grey[200],
-                        onBackgroundImageError: (exception, stackTrace) {
-                        },
+                        child: ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: exercise.imageUrl,
+                            httpHeaders: const {
+                              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
+                            },
+                            width: 60,
+                            height: 60,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2.0),
+                            ),
+                            errorWidget: (context, url, error) {
+                              print('CachedNetworkImage Error: $error');
+                              return const Icon(Icons.error, color: Colors.grey);
+                            },
+                          ),
+                        ),
                       ),
                       title: Text(exercise.name, style: const TextStyle(fontWeight: FontWeight.bold)),
                       onTap: () {
