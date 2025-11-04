@@ -1,11 +1,10 @@
-import 'dart:convert';
-import 'dart:io'; //
+// main.dart
+
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'exercise_model.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'auth_screens.dart'; // Impor file screen autentikasi
 
-
+// Kelas ini diperlukan untuk mengatasi masalah sertifikat SSL saat melakukan panggilan HTTP
 class MyHttpOverrides extends HttpOverrides {
   @override
   HttpClient createHttpClient(SecurityContext? context) {
@@ -16,8 +15,8 @@ class MyHttpOverrides extends HttpOverrides {
 }
 
 void main() {
+  // Menerapkan HttpOverrides secara global
   HttpOverrides.global = MyHttpOverrides();
-
   runApp(const MyApp());
 }
 
@@ -29,162 +28,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Home Workout App',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.deepOrange, // Tema warna yang energik
         visualDensity: VisualDensity.adaptivePlatformDensity,
+        fontFamily: 'Roboto', // Font yang modern dan mudah dibaca
       ),
-      home: const WorkoutListScreen(),
-    );
-  }
-}
-
-class WorkoutListScreen extends StatefulWidget {
-  const WorkoutListScreen({Key? key}) : super(key: key);
-
-  @override
-  _WorkoutListScreenState createState() => _WorkoutListScreenState();
-}
-
-class _WorkoutListScreenState extends State<WorkoutListScreen> {
-  late Future<List<Exercise>> futureExercises;
-
-  @override
-  void initState() {
-    super.initState();
-    futureExercises = fetchExercises();
-  }
-
-  Future<List<Exercise>> fetchExercises() async {
-    final url = Uri.parse(
-        'https://exercisedb-api1.p.rapidapi.com/api/v1/exercises/search?search=strength%20exercises');
-    final response = await http.get(
-      url,
-      headers: {
-        'x-rapidapi-host': 'exercisedb-api1.p.rapidapi.com',
-        'x-rapidapi-key': '733b302f96msh43eb6c8a1e37c36p1877cejsn3e6edce85633',
-      },
-    );
-
-    if (response.statusCode == 200) {
-      Map<String, dynamic> jsonResponse = json.decode(response.body);
-
-      if (jsonResponse.containsKey('data') && jsonResponse['data'] is List) {
-        List exercisesList = jsonResponse['data'];
-        return exercisesList.map((exercise) => Exercise.fromJson(exercise)).toList();
-      } else {
-        throw Exception('Format JSON tidak sesuai atau tidak ada data latihan');
-      }
-    } else {
-      throw Exception('Gagal memuat latihan. Status code: ${response.statusCode}');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Strength Exercises'),
-      ),
-      body: Center(
-        child: FutureBuilder<List<Exercise>>(
-          future: futureExercises,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
-            } else if (snapshot.hasError) {
-              return Text('Error: ${snapshot.error}');
-            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return const Text('Tidak ada latihan yang ditemukan.');
-            } else {
-              return ListView.builder(
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  final exercise = snapshot.data![index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        radius: 30,
-                        backgroundColor: Colors.grey[200],
-                        child: ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: exercise.imageUrl,
-                            httpHeaders: const {
-                              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36',
-                            },
-                            width: 60,
-                            height: 60,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => const Center(
-                              child: CircularProgressIndicator(strokeWidth: 2.0),
-                            ),
-                            errorWidget: (context, url, error) {
-                              print('CachedNetworkImage Error: $error');
-                              return const Icon(Icons.error, color: Colors.grey);
-                            },
-                          ),
-                        ),
-                      ),
-                      title: Text(exercise.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ExerciseDetailScreen(exercise: exercise),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              );
-            }
-          },
-        ),
-      ),
-    );
-  }
-}
-
-
-class ExerciseDetailScreen extends StatelessWidget {
-  final Exercise exercise;
-
-  const ExerciseDetailScreen({Key? key, required this.exercise}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(exercise.name),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            if (exercise.imageUrl.isNotEmpty)
-              Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0),
-                  child: Image.network(
-                    exercise.imageUrl,
-                    height: 250,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.broken_image, size: 100, color: Colors.grey);
-                    },
-                  ),
-                ),
-              ),
-            const SizedBox(height: 20),
-            Text(
-              exercise.name,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-      ),
+      // Layar pertama yang ditampilkan adalah LoginScreen
+      home: const LoginScreen(),
     );
   }
 }
